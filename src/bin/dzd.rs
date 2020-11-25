@@ -13,7 +13,7 @@ use zenoh::net::*;
 use zenoh::Properties;
 use zplugin_dds::*;
 
-fn parse_args() -> (Properties, String) {
+fn parse_args() -> ( zenoh::net::config::ConfigProperties, String) {
     let args = App::new("dzd zenoh router for DDS")
         .arg(Arg::from_usage(
             "-e, --peer=[LOCATOR]...  'Peer locator used to initiate the zenoh session.'",
@@ -37,13 +37,13 @@ fn parse_args() -> (Properties, String) {
         .or_else(|| Some(String::from("")))
         .unwrap();
 
-    let mut config: Properties = Properties::default();
-    config.insert("ZN_LOCAL_ROUTING_KEY".into(), "false".into());
-    config.insert("ZN_MODE_KEY".into(), args.value_of("mode").unwrap().into());
+    let mut config = zenoh::net::config::peer();
+    config.insert(zenoh::net::config::ZN_LOCAL_ROUTING_KEY, "false".into());
+    config.insert(zenoh::net::config::ZN_MODE_KEY, args.value_of("mode").unwrap().into());
 
     match args.value_of("mode").unwrap() {
         "peer" => {
-            config.insert("ZN_PEER_KEY".into(), args.value_of("peer").unwrap().into());
+            config.insert(zenoh::net::config::ZN_PEER_KEY, args.value_of("peer").unwrap().into());
         }
         _ => {}
     }
@@ -54,9 +54,11 @@ fn parse_args() -> (Properties, String) {
 async fn main() {
     env_logger::init();
     let (config, scope) = parse_args();
+
     let dp =
         unsafe { dds_create_participant(DDS_DOMAIN_DEFAULT, std::ptr::null(), std::ptr::null()) };
     let z = Arc::new(open(config.into()).await.unwrap());
+
     let (tx, rx): (Sender<MatchedEntity>, Receiver<MatchedEntity>) = channel();
     run_discovery(dp, tx);
     let mut rid_map = HashMap::<String, ResourceId>::new();
