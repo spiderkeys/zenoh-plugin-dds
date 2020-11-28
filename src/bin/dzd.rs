@@ -45,6 +45,9 @@ fn parse_args() -> ( zenoh::net::config::ConfigProperties, String) {
         "peer" => {
             config.insert(zenoh::net::config::ZN_PEER_KEY, args.value_of("peer").unwrap().into());
         }
+        "client" => {
+            config.insert(zenoh::net::config::ZN_PEER_KEY, args.value_of("peer").unwrap().into());
+        }
         _ => {}
     }
     (config, scope)
